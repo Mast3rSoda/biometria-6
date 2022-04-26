@@ -9,8 +9,7 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_OpenFirst" Click="OpenFile" />
-                <MenuItem Header="_OpenSecond" Click="OpenSecondFile" />
+                <MenuItem Header="_Open" Click="OpenFile" />
             </MenuItem>
         </Menu>
         <Grid>

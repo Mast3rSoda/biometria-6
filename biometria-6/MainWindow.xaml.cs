@@ -35,8 +35,9 @@ namespace biometria_6
     }
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        List<Measure> MeasureList1 = new List<Measure>();
-        List<Measure> MeasureList2 = new List<Measure>();
+        List<Measure> MainMeasureList = new List<Measure>();
+        List<List<Measure>> AllFilesMeasures = new();
+
         public event PropertyChangedEventHandler? PropertyChanged;
         public int SliderValue
         {
@@ -73,36 +74,38 @@ namespace biometria_6
                 {
                     stringBuilder.AppendLine(line);
                     var data = line.Split(",");
-                    MeasureList1.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                    MainMeasureList.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
                 }
                 ReadData.Text = stringBuilder.ToString();
 
-            }
+                string[] fileEntries = Directory.GetFiles( string.Join("\\", fileName.Split("\\").SkipLast(1)));
 
-        }
-
-        private void OpenSecondFile(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image files (*.txt;)|*.txt|All files (*.*)|*.*";
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string fileName = openFileDialog.FileName;
-
-                StringBuilder stringBuilder = new StringBuilder();
-
-                string[] lines = File.ReadAllLines(fileName, Encoding.UTF8);
-
-                foreach (string line in lines)
+                foreach (string file in fileEntries)
                 {
-                    stringBuilder.AppendLine(line);
-                    var data = line.Split(",");
-                    MeasureList2.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                    if (file == fileName)
+                        continue;
+                    stringBuilder = new StringBuilder();
+
+                    lines = File.ReadAllLines(file, Encoding.UTF8);
+                    AllFilesMeasures.Add(new());
+
+                    var measure = AllFilesMeasures.Last();
+                    foreach (string line in lines)
+                    {
+                        if(string.IsNullOrWhiteSpace(line))
+                            continue;
+                        stringBuilder.AppendLine(line);
+                        var data = line.Split(",");
+
+                        measure.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                    }
                 }
-                ReadData.Text = stringBuilder.ToString();
+
 
             }
+
         }
+
+       
     }
 }
