@@ -74,7 +74,7 @@ namespace biometria_6
                 {
                     stringBuilder.AppendLine(line);
                     var data = line.Split(",");
-                    MainMeasureList.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                    MainMeasureList.Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
                 }
                 ReadData.Text = stringBuilder.ToString();
 
@@ -97,7 +97,7 @@ namespace biometria_6
                         stringBuilder.AppendLine(line);
                         var data = line.Split(",");
 
-                        measure.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                        measure.Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
                     }
                 }
 
