@@ -6,7 +6,14 @@
         xmlns:local="clr-namespace:biometria_6"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-
-    </Grid>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open" Click="OpenFile" />
+            </MenuItem>
+        </Menu>
+        <Grid>
+            <TextBox Name="ReadData"></TextBox>
+        </Grid>
+    </DockPanel>
 </Window>
