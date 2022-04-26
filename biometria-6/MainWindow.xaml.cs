@@ -35,7 +35,8 @@ namespace biometria_6
     }
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        List<Measure> MeasureList = new List<Measure>();
+        List<Measure> MeasureList1 = new List<Measure>();
+        List<Measure> MeasureList2 = new List<Measure>();
         public event PropertyChangedEventHandler? PropertyChanged;
         public int SliderValue
         {
@@ -72,13 +73,36 @@ namespace biometria_6
                 {
                     stringBuilder.AppendLine(line);
                     var data = line.Split(",");
-                    MeasureList.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                    MeasureList1.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
                 }
                 ReadData.Text = stringBuilder.ToString();
 
             }
 
         }
-       
+
+        private void OpenSecondFile(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Image files (*.txt;)|*.txt|All files (*.*)|*.*";
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string fileName = openFileDialog.FileName;
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+                string[] lines = File.ReadAllLines(fileName, Encoding.UTF8);
+
+                foreach (string line in lines)
+                {
+                    stringBuilder.AppendLine(line);
+                    var data = line.Split(",");
+                    MeasureList2.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
+                }
+                ReadData.Text = stringBuilder.ToString();
+
+            }
+        }
     }
 }
