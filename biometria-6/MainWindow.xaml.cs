@@ -21,8 +21,21 @@ namespace biometria_6
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    struct Measure
+    {
+        public string KeyName { get; set; }
+        public int DwellTime { get; set; }
+        public int FlightTime { get; set; }
+        public Measure(string KeyName, int DwellTime, int FlightTime)
+        {
+            this.KeyName = KeyName;
+            this.DwellTime = DwellTime;
+            this.FlightTime = FlightTime;
+        }
+    }
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        List<Measure> MeasureList = new List<Measure>();
         public event PropertyChangedEventHandler? PropertyChanged;
         public int SliderValue
         {
@@ -50,18 +63,21 @@ namespace biometria_6
             if (openFileDialog.ShowDialog() == true)
             {
                 string fileName = openFileDialog.FileName;
-                using (FileStream fs = File.OpenRead(fileName))
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+                string[] lines = File.ReadAllLines(fileName, Encoding.UTF8);
+
+                foreach (string line in lines)
                 {
-                    byte[] b = new byte[1024];
-                    UTF8Encoding temp = new UTF8Encoding(true);
-                    StringBuilder stringBuilder = new StringBuilder();
-                    while (fs.Read(b, 0, b.Length) > 0)
-                    {
-                        stringBuilder.Append(temp.GetString(b));
-                    }
-                    ReadData.Text=stringBuilder.ToString();
+                    stringBuilder.AppendLine(line);
+                    var data = line.Split(",");
+                    MeasureList.Add(new Measure(data[0], int.Parse(data[1]), int.Parse(data[2])));
                 }
+                ReadData.Text = stringBuilder.ToString();
+
             }
+
         }
        
     }
