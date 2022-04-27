@@ -21,7 +21,7 @@ namespace biometria_6
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    struct Measure
+    public struct Measure
     {
         public string KeyName { get; set; }
         public int DwellTime { get; set; }

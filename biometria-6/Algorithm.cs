@@ -19,5 +19,24 @@ public static class Algorithm
         return Math.Abs(listC.Sum());
     }
 
+    public static List<Measure> AvarageOutMeasures(List<Measure> measures)
+    {
+        int count = measures.Count;
+        var measureList = new List<Measure>();
+        for(int i = 0; i<count; i++)
+        {
+            string keyName = measures[i].KeyName;
 
+            int firstAvg = (int)measures.Where(p=>p.KeyName==keyName).Select(p=>p.DwellTime).Average();
+            int secondAvg = (int)measures.Where(p=>p.KeyName==keyName).Select(p=>p.FlightTime).Average();
+
+            measureList.Add(new Measure(keyName, firstAvg, secondAvg));
+
+            measureList.RemoveAll(p => p.KeyName == keyName);
+        }
+
+        return measureList;
+    }
+
+    public static List<>
 }
