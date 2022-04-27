@@ -100,7 +100,7 @@ namespace biometria_6
                 StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine($"Plik: {MainFileName[^8..^4]}, \n");
 
-            foreach (var res in Algorithm.KNN(AllFilesMeasures, MainFileName, (ClasifyBy)(int)EnumSlider.Value, SliderValue))
+            foreach (var res in Algorithm.KNN(AllFilesMeasures, MainFileName, (ClasifyBy)(int)EnumSlider.Value, (DistanceType)(int)EnumSlider2.Value, SliderValue))
             {
                 if (string.IsNullOrWhiteSpace(res.Key))
                     continue;

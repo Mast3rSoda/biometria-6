@@ -11,8 +11,32 @@ public enum ClasifyBy
     FlightTime = 2,
     Both = 3,
 }
+
+public enum DistanceType
+{
+    Manhattan = 1,
+    Eucledan = 2,
+    Chebyshev = 3,
+    ChiSquare = 4,
+}
 public static class Algorithm
 {
+    public static int CalcDistance(List<int> listA, List<int> listB, DistanceType distance)
+    {
+        switch (distance)
+        {
+            case DistanceType.Manhattan:
+                return ManhattanLength(listA, listB);
+            case DistanceType.Eucledan:
+                return EucledanLength(listA, listB);
+            case DistanceType.Chebyshev:
+                return Chebyshev(listA, listB);
+            case DistanceType.ChiSquare:
+                return ChiSquare(listA,listB);
+            default:
+                return ManhattanLength(listA, listB);
+        }
+    }
     public static int ManhattanLength(List<int> listA, List<int> listB)
     {
         var listC = new List<int>();
@@ -24,6 +48,39 @@ public static class Algorithm
         return Math.Abs(listC.Sum());
     }
 
+    public static int EucledanLength(List<int> listA, List<int> listB)
+    {
+        var listC = new List<int>();
+        for (int i = 0; i < listA.Count; i++)
+        {
+            listC.Add((int)Math.Sqrt(listA[i] * listA[i] + listB[i] * listB[i]));
+        }
+
+        return Math.Abs(listC.Sum());
+    }
+    public static int Chebyshev(List<int> listA, List<int> listB)
+    {
+        var listC = new List<int>();
+        for (int i = 0; i < listA.Count; i++)
+        {
+            listC.Add(Math.Max(listA[i], listB[i]));
+        }
+
+        return Math.Abs(listC.Sum());
+    }
+    public static int ChiSquare(List<int> listA, List<int> listB)
+    {
+        int sum = 0;
+        for (int i = 0; i < listA.Count; i++)
+        {
+                var div = listA[i] + listB[i];
+                if (div == 0) continue;
+                sum += (listA[i] - listB[i]) * (listA[i] - listB[i]) / div;
+        }
+
+            return sum / 2;
+    }
+   
     public static List<Measure> AvarageOutMeasures(List<Measure> measures)
     {
         int count = measures.Count;
@@ -42,7 +99,7 @@ public static class Algorithm
 
         return measureList;
     }
-    public static Dictionary<string, int> GetLenghts(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy)
+    public static Dictionary<string, int> GetLenghts(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, DistanceType distance)
     {
         Dictionary<string, int> lengthList = new();
         var mainAvg = AvarageOutMeasures(dictionary[mainFileName]);
@@ -53,7 +110,7 @@ public static class Algorithm
                     foreach (var measures in dictionary)
                     {
                         if (measures.Key != mainFileName)
-                            lengthList.Add(measures.Key, ManhattanLength(dictionary[mainFileName].Select(p => p.DwellTime).ToList(), measures.Value.Select(p => p.DwellTime).ToList()));
+                            lengthList.Add(measures.Key, CalcDistance(dictionary[mainFileName].Select(p => p.DwellTime).ToList(), measures.Value.Select(p => p.DwellTime).ToList(), distance));
                     }
                     break;
                 }
@@ -63,7 +120,7 @@ public static class Algorithm
                     foreach (var measures in dictionary)
                     {
                         if (measures.Key != mainFileName)
-                            lengthList.Add(measures.Key, ManhattanLength(dictionary[mainFileName].Select(p => p.FlightTime).ToList(), measures.Value.Select(p => p.FlightTime).ToList()));
+                            lengthList.Add(measures.Key, CalcDistance(dictionary[mainFileName].Select(p => p.FlightTime).ToList(), measures.Value.Select(p => p.FlightTime).ToList(),distance));
                     }
                     break;
                 }
@@ -72,7 +129,7 @@ public static class Algorithm
                     foreach (var measures in dictionary)
                     {
                         if (measures.Key != mainFileName)
-                            lengthList.Add(measures.Key, ManhattanLength(dictionary[mainFileName].Select(p => p.FlightTime + p.DwellTime).ToList(), measures.Value.Select(p => p.FlightTime + p.DwellTime).ToList()));
+                            lengthList.Add(measures.Key, CalcDistance(dictionary[mainFileName].Select(p => p.FlightTime + p.DwellTime).ToList(), measures.Value.Select(p => p.FlightTime + p.DwellTime).ToList(),distance));
                     }
                     break;
                 }
@@ -82,12 +139,12 @@ public static class Algorithm
 
     }
 
-    public static Dictionary<string, double> KNN(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, int k = 3)
+    public static Dictionary<string, double> KNN(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, DistanceType distance, int k = 3 )
     {
         Dictionary<string, int> lengthList = new();
 
 
-        lengthList = GetLenghts(dictionary, mainFileName, clasifyBy).OrderBy(p => p.Value).Take(k).ToDictionary(x => x.Key, x => x.Value);
+        lengthList = GetLenghts(dictionary, mainFileName, clasifyBy, distance).OrderBy(p => p.Value).Take(k).ToDictionary(x => x.Key, x => x.Value);
 
         var most = lengthList.GroupBy(i => i.Key[^8..^6]).OrderByDescending(grp => grp.Count())
                 .ToDictionary(x => x.Key, x => x.Select(k => k.Value).First());
@@ -145,12 +202,12 @@ public static class Algorithm
                     }
                     result *= (double)value;
 
-                    
-                        while (result < 1.0)
-                        {
-                            result *= 10.0;
-                            ++exponent;
-                        }
+
+                    while (result < 1.0)
+                    {
+                        result *= 10.0;
+                        ++exponent;
+                    }
                 }
                 result *= (double)prob;
                 if (result < 0.1)
@@ -159,7 +216,7 @@ public static class Algorithm
                     ++exponent;
                 }
 
-                    resultList.Add(item.Key.Substring(item.Key.IndexOf('#') + 1, 4), new KeyValuePair<double, double>(result, exponent));
+                resultList.Add(item.Key.Substring(item.Key.IndexOf('#') + 1, 4), new KeyValuePair<double, double>(result, exponent));
             }
         }
         sortedList = resultList.OrderByDescending(val => val.Value.Value).ThenBy(val => val.Value.Key).ToList();

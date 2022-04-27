@@ -20,6 +20,7 @@
             <TextBox Name="ReadData"></TextBox>
             <StackPanel Grid.Column="1">
                 <Slider x:Name="EnumSlider" Minimum="1" Maximum="3"  AutoToolTipPlacement="None" TickPlacement="BottomRight" IsTabStop="False" IsSnapToTickEnabled="True" SmallChange="1" Value="1"/>
+                <Slider x:Name="EnumSlider2" Minimum="1" Maximum="3"  AutoToolTipPlacement="None" TickPlacement="BottomRight" IsTabStop="False" IsSnapToTickEnabled="True" SmallChange="1" Value="1"/>
                 <Slider x:Name="NSlider" Minimum="1" AutoToolTipPlacement="None" TickPlacement="BottomRight" IsTabStop="False" IsSnapToTickEnabled="True" SmallChange="1" Value="{Binding SliderValue}"/>
                 <Button Content="KNN" Click="KNN"></Button>
                 <Button Content="Bayes" Click="Bayes"></Button>
