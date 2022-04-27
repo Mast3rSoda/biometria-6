@@ -36,7 +36,6 @@ namespace biometria_6
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         public string MainFileName { get; set; }
-        Dictionary<string, List<Measure>> MainMeasureList = new();
         Dictionary<string, List<Measure>> AllFilesMeasures = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -62,9 +61,9 @@ namespace biometria_6
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "Image files (*.txt;)|*.txt|All files (*.*)|*.*";
-
             if (openFileDialog.ShowDialog() == true)
             {
+                AllFilesMeasures = new();
                 MainFileName = openFileDialog.FileName;
 
                 StringBuilder stringBuilder = new StringBuilder();
@@ -73,15 +72,13 @@ namespace biometria_6
 
                 string[] fileEntries = Directory.GetFiles( string.Join("\\", MainFileName.Split("\\").SkipLast(1)));
 
-                foreach (string file in fileEntries)
+                foreach (var file in fileEntries)
                 {
-                        continue;
                     stringBuilder = new StringBuilder();
 
                     lines = File.ReadAllLines(file, Encoding.UTF8);
                     AllFilesMeasures.Add(file, new());
 
-                    var measure = AllFilesMeasures.Last();
                     foreach (string line in lines)
                     {
                         if(string.IsNullOrWhiteSpace(line))
@@ -89,7 +86,7 @@ namespace biometria_6
                         stringBuilder.AppendLine(line);
                         var data = line.Split(",");
 
-                        MainMeasureList[file].Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
+                        AllFilesMeasures[file].Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
                     }
                 }
 
@@ -98,6 +95,18 @@ namespace biometria_6
 
         }
 
-       
+        private void KNN(object sender, RoutedEventArgs e)
+        {
+                StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine($"Plik: {MainFileName[^8..^4]}, \n");
+
+            foreach (var res in Algorithm.KNN(AllFilesMeasures, MainFileName, (ClasifyBy)(int)EnumSlider.Value, SliderValue))
+            {
+                if (string.IsNullOrWhiteSpace(res.Key))
+                    continue;
+                stringBuilder.AppendLine($"{res.Key} - {Math.Round(res.Value,3)}, \n");
+            }
+            ReadData.Text = stringBuilder.ToString();
+        }
     }
 }
