@@ -115,7 +115,7 @@ namespace biometria_6
             stringBuilder.AppendLine($"Plik: {MainFileName[^8..^4]}, \n");
             foreach (var pair in Algorithm.Bayes(AllFilesMeasures, MainFileName, (ClasifyBy)(int)EnumSlider.Value, SliderValue))
             {
-                stringBuilder.AppendLine($"{pair.Key} - {pair.Value.Key}E+-{pair.Value.Value}, \n");
+                stringBuilder.AppendLine($"{pair.Key} - {pair.Value.Key}E-{pair.Value.Value}, \n");
             }
 
             ReadData.Text = stringBuilder.ToString();
