@@ -109,7 +109,6 @@ public static class Algorithm
             if (item.Key != mainFileName)
             {
                 double result = 1.0;
-
                 double exponent = 0;
                 foreach (var val in item.Value)
                 {
@@ -145,21 +144,13 @@ public static class Algorithm
                             }
                     }
                     result *= (double)value;
-                    bool isNegative = false;
 
-                    if (result < 0)
-                    {
-                        isNegative = true;
-                        result *= (-1.0);
-                    }
-                    if (result < 1.0)
+                    
                         while (result < 1.0)
                         {
                             result *= 10.0;
                             ++exponent;
                         }
-                    if (isNegative)
-                        result *= (-1.0);
                 }
                 result *= (double)prob;
                 if (result < 0.1)
