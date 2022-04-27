@@ -82,7 +82,7 @@ public static class Algorithm
 
     }
 
-    public static Dictionary<string, double> KNN(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, int k=3)
+    public static Dictionary<string, double> KNN(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, int k = 3)
     {
         Dictionary<string, int> lengthList = new();
 
@@ -90,43 +90,206 @@ public static class Algorithm
         lengthList = GetLenghts(dictionary, mainFileName, clasifyBy).OrderBy(p => p.Value).Take(k).ToDictionary(x => x.Key, x => x.Value);
 
         var most = lengthList.GroupBy(i => i.Key[^8..^6]).OrderByDescending(grp => grp.Count())
-                .ToDictionary(x => x.Key, x => x.Select(k=>k.Value).First());
+                .ToDictionary(x => x.Key, x => x.Select(k => k.Value).First());
 
-        return most.ToDictionary(x => x.Key, x => 1-(double)x.Value/lengthList.Select(p=>p.Value).ToList().Sum());
+        return most.ToDictionary(x => x.Key, x => 1 - (double)x.Value / lengthList.Select(p => p.Value).ToList().Sum());
     }
 
-    public static Dictionary<string, int> Bayes(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, int k = 3)
+    public static Dictionary<string, KeyValuePair<double, double>> Bayes(Dictionary<string, List<Measure>> dictionary, string mainFileName, ClasifyBy clasifyBy, int k)
     {
-        var propability = 3.0/dictionary.Keys.Count;
-        Dictionary<string, int> lengthList = new();
-
-
-        lengthList = GetLenghts(dictionary, mainFileName, clasifyBy).ToDictionary(x => x.Key, x => x.Value);
-
-        Dictionary<string, double> lengthListMean = new();
-        string previous = "";
-        int counter = 0;
-        double meanVal = 0;
-        foreach(var item in lengthList)
+        Dictionary<string, int> lengthListMean = new();
+        Dictionary<string, double> lengthListVariance = new();
+        Dictionary<string, KeyValuePair<double, double>> resultList = new();
+        List<KeyValuePair<string, KeyValuePair<double, double>>> sortedList = new();
+        lengthListMean = GetMean(dictionary, mainFileName, clasifyBy);
+        lengthListVariance = GetVariance(dictionary, lengthListMean, mainFileName, clasifyBy);
+        double prob = 1.0 / ((double)dictionary.Count - 1);
+        foreach (var item in dictionary)
         {
-            if(item.Key == previous)
+            if (item.Key != mainFileName)
             {
-                meanVal += item.Value;
-                counter++;
-            }
-            else
-            {
-                lengthListMean.Add(previous, meanVal / counter);
-                meanVal = item.Value;
-                counter = 1;
-                previous = item.Key; //mean values for every user
+                double result = 1.0;
+
+                double exponent = 0;
+                foreach (var val in item.Value)
+                {
+                    double value = 1.0;
+                    switch (clasifyBy)
+                    {
+                        case ClasifyBy.DwellTime:
+                            {
+                                value *= Math.Pow((double)val.DwellTime - (double)lengthListMean[val.KeyName], 2.0);
+                                value *= -1.0;
+                                value /= Math.Pow((double)lengthListVariance[val.KeyName], 2.0) * 2;
+                                value = Math.Exp(value);
+                                value /= Math.Sqrt(Math.Pow((double)lengthListVariance[val.KeyName], 2.0) * Math.PI * 2);
+                                break;
+                            }
+                        case ClasifyBy.FlightTime:
+                            {
+                                value *= Math.Pow((double)val.FlightTime - (double)lengthListMean[val.KeyName], 2.0);
+                                value *= -1.0;
+                                value /= Math.Pow((double)lengthListVariance[val.KeyName], 2.0) * 2;
+                                value = Math.Exp(value);
+                                value /= Math.Sqrt(Math.Pow((double)lengthListVariance[val.KeyName], 2.0) * Math.PI * 2);
+                                break;
+                            }
+                        case ClasifyBy.Both:
+                            {
+                                value *= Math.Pow(((double)val.DwellTime + (double)val.FlightTime) - (double)lengthListMean[val.KeyName], 2.0);
+                                value *= -1.0;
+                                value /= Math.Pow((double)lengthListVariance[val.KeyName], 2.0) * 2;
+                                value = Math.Exp(value);
+                                value /= Math.Sqrt(Math.Pow((double)lengthListVariance[val.KeyName], 2.0) * Math.PI * 2);
+                                break;
+                            }
+                    }
+                    result *= (double)value;
+                    bool isNegative = false;
+
+                    if (result < 0)
+                    {
+                        isNegative = true;
+                        result *= (-1.0);
+                    }
+                    if (result < 1.0)
+                        while (result < 1.0)
+                        {
+                            result *= 10.0;
+                            ++exponent;
+                        }
+                    if (isNegative)
+                        result *= (-1.0);
+                }
+                result *= (double)prob;
+                if (result < 0.1)
+                {
+                    result *= 10.0;
+                    ++exponent;
+                }
+
+                    resultList.Add(item.Key.Substring(item.Key.IndexOf('#') + 1, 4), new KeyValuePair<double, double>(result, exponent));
             }
         }
-        //nie rozumiem jak to zrobić
+        sortedList = resultList.OrderByDescending(val => val.Value.Value).ThenBy(val => val.Value.Key).ToList();
+        resultList.Clear();
+        for (int i = 0; i < k; i++)
+        {
+            resultList.Add(sortedList[i].Key, sortedList[i].Value);
+        }
+
+        return resultList;
+
     }
 
+    public static Dictionary<string, int> GetMean(Dictionary<string, List<Measure>> dictionary, string fileName, ClasifyBy clasifyBy)
+    {
+        Dictionary<string, int> lengthList = new();
+        foreach (var item in dictionary)
+        {
+            if (item.Key != fileName)
+                foreach (var val in item.Value)
+                {
+                    switch (clasifyBy)
+                    {
+                        case ClasifyBy.DwellTime:
+                            {
+                                if (!lengthList.ContainsKey(val.KeyName))
+                                {
+                                    lengthList.Add(val.KeyName, val.DwellTime);
+                                    break;
+                                }
+                                lengthList[val.KeyName] += val.DwellTime;
+                                break;
+                            }
+                        case ClasifyBy.FlightTime:
+                            {
 
+                                if (!lengthList.ContainsKey(val.KeyName))
+                                {
+                                    lengthList.Add(val.KeyName, val.FlightTime);
+                                    break;
+                                }
+                                lengthList[val.KeyName] += val.FlightTime;
+                                break;
+                            }
+                        case ClasifyBy.Both:
+                            {
+                                if (!lengthList.ContainsKey(val.KeyName))
+                                {
+                                    lengthList.Add(val.KeyName, val.DwellTime + val.FlightTime);
+                                    break;
+                                }
+                                lengthList[val.KeyName] += val.DwellTime + val.FlightTime;
+                                break;
+                            }
+                    }
 
+                }
+        }
+        foreach (var item in lengthList)
+        {
+            lengthList[item.Key] /= dictionary.Count;
+        }
+        return lengthList;
+    }
 
+    public static Dictionary<string, double> GetVariance(Dictionary<string, List<Measure>> dictionary, Dictionary<string, int> meanValues, string fileName, ClasifyBy clasifyBy)
+    {
+        var varianceValues = new Dictionary<string, double>();
+        var count = new Dictionary<string, double>();
 
+        foreach (var item in dictionary)
+        {
+            if (item.Key != fileName)
+                foreach (var val in item.Value)
+                {
+                    switch (clasifyBy)
+                    {
+                        case ClasifyBy.DwellTime:
+                            {
+                                if (!varianceValues.ContainsKey(val.KeyName))
+                                {
+                                    varianceValues.Add(val.KeyName, Math.Pow(((double)val.DwellTime - (double)meanValues[val.KeyName]), 2.0));
+                                    count.Add(val.KeyName, 1.0);
+                                    break;
+                                }
+                                varianceValues[val.KeyName] += Math.Pow(((double)val.DwellTime - (double)meanValues[val.KeyName]), 2.0);
+                                count[val.KeyName] += 1.0;
+                                break;
+                            }
+                        case ClasifyBy.FlightTime:
+                            {
+                                if (!varianceValues.ContainsKey(val.KeyName))
+                                {
+                                    varianceValues.Add(val.KeyName, Math.Pow(((double)val.FlightTime - (double)meanValues[val.KeyName]), 2.0));
+                                    count.Add(val.KeyName, 1.0);
+                                    break;
+                                }
+                                varianceValues[val.KeyName] += Math.Pow(((double)val.FlightTime - (double)meanValues[val.KeyName]), 2.0);
+                                count[val.KeyName] += 1.0;
+                                break;
+                            }
+                        case ClasifyBy.Both:
+                            {
+                                if (!varianceValues.ContainsKey(val.KeyName))
+                                {
+                                    varianceValues.Add(val.KeyName, Math.Pow(((double)val.DwellTime + (double)val.FlightTime - (double)meanValues[val.KeyName]), 2.0));
+                                    count.Add(val.KeyName, 1.0);
+                                    break;
+                                }
+                                varianceValues[val.KeyName] += Math.Pow(((double)val.DwellTime + (double)val.FlightTime - (double)meanValues[val.KeyName]), 2.0);
+                                count[val.KeyName] += 1.0;
+                                break;
+                            }
+                    }
+                }
+        }
+        foreach (var val in varianceValues)
+        {
+            varianceValues[val.Key] /= (double)count[val.Key];
+        }
+        return varianceValues;
+
+    }
 }
