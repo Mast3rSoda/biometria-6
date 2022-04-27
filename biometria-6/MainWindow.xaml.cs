@@ -35,8 +35,9 @@ namespace biometria_6
     }
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        List<Measure> MainMeasureList = new List<Measure>();
-        List<List<Measure>> AllFilesMeasures = new();
+        public string MainFileName { get; set; }
+        Dictionary<string, List<Measure>> MainMeasureList = new();
+        Dictionary<string, List<Measure>> AllFilesMeasures = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public int SliderValue
@@ -64,30 +65,21 @@ namespace biometria_6
 
             if (openFileDialog.ShowDialog() == true)
             {
-                string fileName = openFileDialog.FileName;
+                MainFileName = openFileDialog.FileName;
 
                 StringBuilder stringBuilder = new StringBuilder();
 
-                string[] lines = File.ReadAllLines(fileName, Encoding.UTF8);
+                string[] lines;
 
-                foreach (string line in lines)
-                {
-                    stringBuilder.AppendLine(line);
-                    var data = line.Split(",");
-                    MainMeasureList.Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
-                }
-                ReadData.Text = stringBuilder.ToString();
-
-                string[] fileEntries = Directory.GetFiles( string.Join("\\", fileName.Split("\\").SkipLast(1)));
+                string[] fileEntries = Directory.GetFiles( string.Join("\\", MainFileName.Split("\\").SkipLast(1)));
 
                 foreach (string file in fileEntries)
                 {
-                    if (file == fileName)
                         continue;
                     stringBuilder = new StringBuilder();
 
                     lines = File.ReadAllLines(file, Encoding.UTF8);
-                    AllFilesMeasures.Add(new());
+                    AllFilesMeasures.Add(file, new());
 
                     var measure = AllFilesMeasures.Last();
                     foreach (string line in lines)
@@ -97,7 +89,7 @@ namespace biometria_6
                         stringBuilder.AppendLine(line);
                         var data = line.Split(",");
 
-                        measure.Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
+                        MainMeasureList[file].Add(new Measure(data[0], int.Parse(data[2]), int.Parse(data[1])));
                     }
                 }
 
